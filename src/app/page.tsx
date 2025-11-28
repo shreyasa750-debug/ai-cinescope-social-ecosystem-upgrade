@@ -6,16 +6,16 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Navigation } from '@/components/Navigation';
 import { HomeSection } from '@/components/HomeSection';
 import { AuthSection } from '@/components/AuthSection';
-import { DiscoverSection } from '@/components/DiscoverSection';
+import { ExploreSection } from '@/components/ExploreSection';
+import { DashboardPageSection } from '@/components/DashboardPageSection';
 import { AnalyticsSection } from '@/components/AnalyticsSection';
-import { RecommendationsSection } from '@/components/RecommendationsSection';
 import { SocialSection } from '@/components/SocialSection';
 import { BadgesSection } from '@/components/BadgesSection';
 import { ChallengesSection } from '@/components/ChallengesSection';
 import { WatchPartiesSection } from '@/components/WatchPartiesSection';
-import { DashboardSection } from '@/components/DashboardSection';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function CineScopePage() {
   const [currentSection, setCurrentSection] = useState('home');
@@ -49,9 +49,14 @@ export default function CineScopePage() {
       description: 'Go to home',
     },
     {
+      key: 'e',
+      action: () => handleNavigate('explore'),
+      description: 'Go to explore',
+    },
+    {
       key: 'd',
-      action: () => handleNavigate('discover'),
-      description: 'Go to discover',
+      action: () => handleNavigate('dashboard'),
+      description: 'Go to dashboard',
     },
     {
       key: 'a',
@@ -84,14 +89,12 @@ export default function CineScopePage() {
         return <HomeSection onNavigate={handleNavigate} />;
       case 'auth':
         return <AuthSection onSuccess={() => handleNavigate('home')} />;
-      case 'discover':
-        return <DiscoverSection />;
+      case 'explore':
+        return <ExploreSection />;
       case 'dashboard':
-        return <DashboardSection />;
+        return <DashboardPageSection onNavigate={handleNavigate} />;
       case 'analytics':
         return <AnalyticsSection />;
-      case 'recommendations':
-        return <RecommendationsSection />;
       case 'social':
         return <SocialSection />;
       case 'badges':
@@ -108,7 +111,7 @@ export default function CineScopePage() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-20 md:pb-0">
           <Navigation onNavigate={handleNavigate} currentSection={currentSection} />
           <main>{renderSection()}</main>
           
@@ -117,7 +120,9 @@ export default function CineScopePage() {
             <div className="container mx-auto px-4 py-8">
               <div className="grid md:grid-cols-4 gap-8">
                 <div>
-                  <h3 className="font-bold mb-4">CineScope</h3>
+                  <h3 className="font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                    CineScope+
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Your AI-powered movie companion for discovering, tracking, and sharing your cinematic journey.
                   </p>
@@ -150,7 +155,7 @@ export default function CineScopePage() {
                 </div>
               </div>
               <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-                <p>© 2024 CineScope. Built with Next.js, AI, and ❤️ for movie lovers.</p>
+                <p>© 2024 CineScope+. Built with Next.js, AI, and ❤️ for movie lovers.</p>
               </div>
             </div>
           </footer>
@@ -160,6 +165,9 @@ export default function CineScopePage() {
             open={showOnboarding}
             onComplete={handleOnboardingComplete}
           />
+
+          {/* Toast Notifications */}
+          <Toaster />
         </div>
       </AuthProvider>
     </ThemeProvider>

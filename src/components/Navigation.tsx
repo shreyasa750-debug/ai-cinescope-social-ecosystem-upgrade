@@ -23,17 +23,14 @@ import {
   Sun,
   Home,
   Compass,
-  TrendingUp,
   Users,
   BarChart3,
-  MessageSquare,
+  LayoutDashboard,
   Keyboard,
   Shield,
   UserCircle,
   Bot,
   UsersRound,
-  Trophy,
-  Target,
 } from 'lucide-react';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { ParentalControlsDialog } from './ParentalControlsDialog';
@@ -59,18 +56,17 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      onNavigate('discover');
+      onNavigate('explore');
     }
   };
 
   const navItems = [
     { icon: Home, label: 'Home', section: 'home' },
-    { icon: Compass, label: 'Discover', section: 'discover' },
-    { icon: TrendingUp, label: 'Recommendations', section: 'recommendations' },
+    { icon: Compass, label: 'Explore', section: 'explore' },
+    { icon: LayoutDashboard, label: 'Dashboard', section: 'dashboard' },
     { icon: Users, label: 'Social', section: 'social' },
     { icon: BarChart3, label: 'Analytics', section: 'analytics' },
-    { icon: Trophy, label: 'Badges', section: 'badges' },
-    { icon: Target, label: 'Challenges', section: 'challenges' },
+    { icon: UserCircle, label: 'Profile', section: 'profile' },
   ];
 
   return (
@@ -84,7 +80,7 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
           >
             <Film className="h-6 w-6 text-primary" />
             <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              CineScope
+              CineScope+
             </span>
           </button>
 
@@ -190,6 +186,10 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                     <User className="mr-2 h-4 w-4" />
                     My Profile
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onNavigate('dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onNavigate('analytics')}>
                     <BarChart3 className="mr-2 h-4 w-4" />
                     Analytics
@@ -239,6 +239,26 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                 </div>
               </SheetContent>
             </Sheet>
+          </div>
+        </div>
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
+          <div className="grid grid-cols-6 gap-1 p-2">
+            {navItems.map((item) => (
+              <button
+                key={item.section}
+                onClick={() => onNavigate(item.section)}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                  currentSection === item.section
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </nav>
