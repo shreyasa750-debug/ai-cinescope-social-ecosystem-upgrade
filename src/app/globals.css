@@ -1,3 +1,6 @@
+/* Updated: 2025-11-28T05:10:29.388Z */
+/* Updated: 2025-11-26T09:55:12.189Z */
+/* Updated: 2025-11-25T16:03:35.971Z */
 /* Updated: 2025-11-19T07:13:32.721Z */
 /* Updated: 2025-11-19T05:11:23.163Z */
 /* Updated: 2025-10-23T15:50:31.428Z */
@@ -127,6 +130,21 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
   }
 }
 
