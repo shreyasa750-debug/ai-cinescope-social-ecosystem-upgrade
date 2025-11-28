@@ -31,6 +31,8 @@ import {
   UserCircle,
   Bot,
   UsersRound,
+  MessageSquare,
+  ActivitySquare,
 } from 'lucide-react';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { ParentalControlsDialog } from './ParentalControlsDialog';
@@ -64,7 +66,7 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
     { icon: Home, label: 'Home', section: 'home' },
     { icon: Compass, label: 'Explore', section: 'explore' },
     { icon: LayoutDashboard, label: 'Dashboard', section: 'dashboard' },
-    { icon: Users, label: 'Social', section: 'social' },
+    { icon: ActivitySquare, label: 'Feed', section: 'feed' },
     { icon: BarChart3, label: 'Analytics', section: 'analytics' },
     { icon: UserCircle, label: 'Profile', section: 'profile' },
   ];
@@ -120,7 +122,7 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setAIChatOpen(true)}
+              onClick={() => onNavigate('chatbot')}
               title="AI Assistant"
             >
               <Bot className="h-5 w-5" />
@@ -194,6 +196,14 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                     <BarChart3 className="mr-2 h-4 w-4" />
                     Analytics
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onNavigate('feed')}>
+                    <ActivitySquare className="mr-2 h-4 w-4" />
+                    Social Feed
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onNavigate('chatbot')}>
+                    <Bot className="mr-2 h-4 w-4" />
+                    AI Chatbot
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setParentalControlsOpen(true)}>
                     <Shield className="mr-2 h-4 w-4" />
                     Parental Controls
@@ -236,6 +246,22 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                       {item.label}
                     </Button>
                   ))}
+                  <Button
+                    variant="ghost"
+                    onClick={() => onNavigate('chatbot')}
+                    className="justify-start gap-2"
+                  >
+                    <Bot className="h-4 w-4" />
+                    AI Chatbot
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => onNavigate('social')}
+                    className="justify-start gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Social Hub
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>

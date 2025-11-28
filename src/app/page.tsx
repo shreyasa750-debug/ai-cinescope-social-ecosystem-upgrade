@@ -17,6 +17,12 @@ import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Toaster } from '@/components/ui/sonner';
 
+// New Sections
+import { SocialFeedSection } from '@/components/SocialFeedSection';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { ProfileSection } from '@/components/ProfileSection';
+import { ChatbotSection } from '@/components/ChatbotSection';
+
 export default function CineScopePage() {
   const [currentSection, setCurrentSection] = useState('home');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -69,6 +75,21 @@ export default function CineScopePage() {
       description: 'Go to social',
     },
     {
+      key: 'f',
+      action: () => handleNavigate('feed'),
+      description: 'Go to social feed',
+    },
+    {
+      key: 'p',
+      action: () => handleNavigate('profile'),
+      description: 'Go to profile',
+    },
+    {
+      key: 'c',
+      action: () => handleNavigate('chatbot'),
+      description: 'Go to chatbot',
+    },
+    {
       key: '/',
       action: () => {
         const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
@@ -94,9 +115,15 @@ export default function CineScopePage() {
       case 'dashboard':
         return <DashboardPageSection onNavigate={handleNavigate} />;
       case 'analytics':
-        return <AnalyticsSection />;
+        return <AnalyticsDashboard />;
       case 'social':
         return <SocialSection />;
+      case 'feed':
+        return <SocialFeedSection />;
+      case 'profile':
+        return <ProfileSection />;
+      case 'chatbot':
+        return <ChatbotSection />;
       case 'badges':
         return <BadgesSection />;
       case 'challenges':
