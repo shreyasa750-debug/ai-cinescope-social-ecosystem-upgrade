@@ -23,6 +23,34 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Configure allowed dev origins for iframe embedding
+  allowedDevOrigins: [
+    'https://www.orchids.app',
+    'https://orchids.app',
+    'https://*.orchids.page',
+    'https://*.proxy.daytona.works',
+  ],
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.{jsx,tsx}": {
@@ -33,4 +61,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-// Orchids restart: 1761234531091
+// Orchids restart: 1764688458410

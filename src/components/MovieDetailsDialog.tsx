@@ -22,10 +22,13 @@ import {
   Play,
   MessageSquare,
   Users,
-  Bookmark
+  Bookmark,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { normalizeGenres } from '@/lib/genre-utils';
 import { getMoviePosterUrl, getMovieBackdropUrl, getPersonProfileUrl } from '@/lib/tmdb';
+import { toast } from 'sonner';
 
 interface Movie {
   id: number;
@@ -72,7 +75,10 @@ export function MovieDetailsDialog({ movieId, open, onOpenChange }: MovieDetails
   const [movie, setMovie] = useState<Movie | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [imageError, setImageError] = useState(false);
+  const [backdropError, setBackdropError] = useState(false);
 
   useEffect(() => {
     if (movieId && open) {
@@ -84,16 +90,36 @@ export function MovieDetailsDialog({ movieId, open, onOpenChange }: MovieDetails
     if (!movieId) return;
 
     setLoading(true);
+    setError(null);
+    setImageError(false);
+    setBackdropError(false);
+    
     try {
       const response = await fetch(`/api/movies/${movieId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load movie details (${response.status})`);
+      }
+      
       const data = await response.json();
-      setMovie(data.movie);
-      setReviews(data.reviews || []);
+      
+      if (data.movie) {
+        setMovie(data.movie);
+        setReviews(data.reviews || []);
+      } else {
+        throw new Error('Movie data not found');
+      }
     } catch (error) {
       console.error('Error fetching movie details:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load movie details');
+      toast.error('Failed to load movie details');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    fetchMovieDetails();
   };
 
   const parseCast = (cast: any): string[] => {
@@ -122,6 +148,31 @@ export function MovieDetailsDialog({ movieId, open, onOpenChange }: MovieDetails
     return [];
   };
 
+  if (error) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <AlertCircle className="h-16 w-16 text-destructive" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2">Unable to Load Movie</h3>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={handleRetry} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Try Again
+                </Button>
+                <Button onClick={() => onOpenChange(false)} variant="outline">
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
@@ -136,19 +187,35 @@ export function MovieDetailsDialog({ movieId, open, onOpenChange }: MovieDetails
           <ScrollArea className="max-h-[90vh]">
             {/* Backdrop */}
             <div className="relative h-64 md:h-80">
-              <img
-                src={getMovieBackdropUrl(movie.backdropPath) || getMoviePosterUrl(movie.posterPath)}
-                alt={movie.title}
-                className="w-full h-full object-cover"
-              />
+              {!backdropError ? (
+                <img
+                  src={getMovieBackdropUrl(movie.backdropPath) || getMoviePosterUrl(movie.posterPath)}
+                  alt={`${movie.title} backdrop`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={() => setBackdropError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
+                  <div className="text-6xl">🎬</div>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background/50" />
               
               {/* Play Button */}
               {parseTrailers(movie.trailers)[0] && (
                 <Button
                   size="lg"
                   className="absolute bottom-4 left-4 gap-2"
-                  onClick={() => window.open(parseTrailers(movie.trailers)[0], '_blank')}
+                  onClick={() => {
+                    const trailerUrl = parseTrailers(movie.trailers)[0];
+                    if (window.self !== window.top) {
+                      window.parent.postMessage({ type: "OPEN_EXTERNAL_URL", data: { url: trailerUrl } }, "*");
+                    } else {
+                      window.open(trailerUrl, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
                 >
                   <Play className="h-5 w-5" />
                   Watch Trailer
@@ -159,11 +226,19 @@ export function MovieDetailsDialog({ movieId, open, onOpenChange }: MovieDetails
             <div className="p-6">
               {/* Header */}
               <div className="flex gap-6 mb-6">
-                <img
-                  src={getMoviePosterUrl(movie.posterPath)}
-                  alt={movie.title}
-                  className="w-32 h-48 object-cover rounded-lg shadow-lg hidden md:block"
-                />
+                {!imageError ? (
+                  <img
+                    src={getMoviePosterUrl(movie.posterPath)}
+                    alt={`${movie.title} poster`}
+                    className="w-32 h-48 object-cover rounded-lg shadow-lg hidden md:block"
+                    loading="lazy"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-32 h-48 bg-muted rounded-lg shadow-lg hidden md:flex items-center justify-center">
+                    <div className="text-4xl">🎬</div>
+                  </div>
+                )}
                 
                 <div className="flex-1">
                   <DialogHeader className="mb-4">
