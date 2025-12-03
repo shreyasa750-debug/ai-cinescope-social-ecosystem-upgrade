@@ -1,32 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Navigation } from '@/components/Navigation';
 import { HomeSection } from '@/components/HomeSection';
-import { AuthSection } from '@/components/AuthSection';
-import { ExploreSection } from '@/components/ExploreSection';
-import { DashboardPageSection } from '@/components/DashboardPageSection';
-import { AnalyticsSection } from '@/components/AnalyticsSection';
-import { SocialSection } from '@/components/SocialSection';
-import { BadgesSection } from '@/components/BadgesSection';
-import { ChallengesSection } from '@/components/ChallengesSection';
-import { WatchPartiesSection } from '@/components/WatchPartiesSection';
-import { OnboardingDialog } from '@/components/OnboardingDialog';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Toaster } from '@/components/ui/sonner';
 
-// New Sections
-import { SocialFeedSection } from '@/components/SocialFeedSection';
-import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
-import { ProfileSection } from '@/components/ProfileSection';
-import { ChatbotSection } from '@/components/ChatbotSection';
-
-export default function CineScopePage() {
-  const [currentSection, setCurrentSection] = useState('home');
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
+export default function HomePage() {
   // Register service worker for offline support
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -34,113 +15,16 @@ export default function CineScopePage() {
         console.error('Service Worker registration failed:', error);
       });
     }
-
-    // Check if user needs onboarding
-    const hasCompletedOnboarding = localStorage.getItem('onboarding_completed');
-    if (!hasCompletedOnboarding) {
-      setShowOnboarding(true);
-    }
   }, []);
-
-  const handleNavigate = (section: string) => {
-    setCurrentSection(section);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Keyboard shortcuts
-  useKeyboardShortcuts([
-    {
-      key: 'h',
-      action: () => handleNavigate('home'),
-      description: 'Go to home',
-    },
-    {
-      key: 'e',
-      action: () => handleNavigate('explore'),
-      description: 'Go to explore',
-    },
-    {
-      key: 'd',
-      action: () => handleNavigate('dashboard'),
-      description: 'Go to dashboard',
-    },
-    {
-      key: 'a',
-      action: () => handleNavigate('analytics'),
-      description: 'Go to analytics',
-    },
-    {
-      key: 's',
-      action: () => handleNavigate('social'),
-      description: 'Go to social',
-    },
-    {
-      key: 'f',
-      action: () => handleNavigate('feed'),
-      description: 'Go to social feed',
-    },
-    {
-      key: 'p',
-      action: () => handleNavigate('profile'),
-      description: 'Go to profile',
-    },
-    {
-      key: 'c',
-      action: () => handleNavigate('chatbot'),
-      description: 'Go to chatbot',
-    },
-    {
-      key: '/',
-      action: () => {
-        const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
-        searchInput?.focus();
-      },
-      description: 'Focus search',
-    },
-  ]);
-
-  const handleOnboardingComplete = () => {
-    localStorage.setItem('onboarding_completed', 'true');
-    setShowOnboarding(false);
-  };
-
-  const renderSection = () => {
-    switch (currentSection) {
-      case 'home':
-        return <HomeSection onNavigate={handleNavigate} />;
-      case 'auth':
-        return <AuthSection onSuccess={() => handleNavigate('home')} />;
-      case 'explore':
-        return <ExploreSection />;
-      case 'dashboard':
-        return <DashboardPageSection onNavigate={handleNavigate} />;
-      case 'analytics':
-        return <AnalyticsDashboard />;
-      case 'social':
-        return <SocialSection />;
-      case 'feed':
-        return <SocialFeedSection />;
-      case 'profile':
-        return <ProfileSection />;
-      case 'chatbot':
-        return <ChatbotSection />;
-      case 'badges':
-        return <BadgesSection />;
-      case 'challenges':
-        return <ChallengesSection />;
-      case 'watch-parties':
-        return <WatchPartiesSection />;
-      default:
-        return <HomeSection onNavigate={handleNavigate} />;
-    }
-  };
 
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-background pb-20 md:pb-0">
-          <Navigation onNavigate={handleNavigate} currentSection={currentSection} />
-          <main>{renderSection()}</main>
+        <div className="min-h-screen bg-background">
+          <Navigation />
+          <main>
+            <HomeSection />
+          </main>
           
           {/* Footer */}
           <footer className="border-t border-border mt-16">
@@ -186,12 +70,6 @@ export default function CineScopePage() {
               </div>
             </div>
           </footer>
-
-          {/* Onboarding Dialog */}
-          <OnboardingDialog
-            open={showOnboarding}
-            onComplete={handleOnboardingComplete}
-          />
 
           {/* Toast Notifications */}
           <Toaster />

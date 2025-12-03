@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,73 +33,75 @@ import {
   UserCircle,
   Bot,
   UsersRound,
-  MessageSquare,
   ActivitySquare,
 } from 'lucide-react';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { ParentalControlsDialog } from './ParentalControlsDialog';
 import { ProfileSwitcher } from './ProfileSwitcher';
-import { AIChatDialog } from './AIChatDialog';
 import { CollaborativeSearch } from './CollaborativeSearch';
 
-interface NavigationProps {
-  onNavigate: (section: string) => void;
-  currentSection: string;
-}
-
-export function Navigation({ onNavigate, currentSection }: NavigationProps) {
+export function Navigation() {
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [parentalControlsOpen, setParentalControlsOpen] = useState(false);
   const [profileSwitcherOpen, setProfileSwitcherOpen] = useState(false);
-  const [aiChatOpen, setAIChatOpen] = useState(false);
   const [collaborativeSearchOpen, setCollaborativeSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      onNavigate('explore');
+      router.push(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
     }
   };
 
   const navItems = [
-    { icon: Home, label: 'Home', section: 'home' },
-    { icon: Compass, label: 'Explore', section: 'explore' },
-    { icon: LayoutDashboard, label: 'Dashboard', section: 'dashboard' },
-    { icon: ActivitySquare, label: 'Feed', section: 'feed' },
-    { icon: BarChart3, label: 'Analytics', section: 'analytics' },
-    { icon: UserCircle, label: 'Profile', section: 'profile' },
+    { icon: Home, label: 'Home', path: '/' },
+    { icon: Compass, label: 'Explore', path: '/explore' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: ActivitySquare, label: 'Feed', path: '/feed' },
+    { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+    { icon: UserCircle, label: 'Profile', path: '/profile' },
   ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/';
+    return pathname.startsWith(path);
+  };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <>
       <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <button
-            onClick={() => onNavigate('home')}
-            className="flex items-center gap-2 text-xl font-bold"
-          >
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80 transition-opacity">
             <Film className="h-6 w-6 text-primary" />
             <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               CineScope+
             </span>
-          </button>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Button
-                key={item.section}
-                variant={currentSection === item.section ? 'default' : 'ghost'}
+                key={item.path}
+                variant={isActive(item.path) ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => onNavigate(item.section)}
+                asChild
                 className="gap-2"
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <Link href={item.path}>
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
               </Button>
             ))}
           </div>
@@ -122,10 +126,12 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onNavigate('chatbot')}
+              asChild
               title="AI Assistant"
             >
-              <Bot className="h-5 w-5" />
+              <Link href="/chatbot">
+                <Bot className="h-5 w-5" />
+              </Link>
             </Button>
 
             {/* Collaborative Search */}
@@ -184,25 +190,35 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                     <UserCircle className="mr-2 h-4 w-4" />
                     Switch Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNavigate('profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    My Profile
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      My Profile
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNavigate('dashboard')}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNavigate('analytics')}>
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Analytics
+                  <DropdownMenuItem asChild>
+                    <Link href="/analytics">
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Analytics
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNavigate('feed')}>
-                    <ActivitySquare className="mr-2 h-4 w-4" />
-                    Social Feed
+                  <DropdownMenuItem asChild>
+                    <Link href="/feed">
+                      <ActivitySquare className="mr-2 h-4 w-4" />
+                      Social Feed
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onNavigate('chatbot')}>
-                    <Bot className="mr-2 h-4 w-4" />
-                    AI Chatbot
+                  <DropdownMenuItem asChild>
+                    <Link href="/chatbot">
+                      <Bot className="mr-2 h-4 w-4" />
+                      AI Chatbot
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setParentalControlsOpen(true)}>
                     <Shield className="mr-2 h-4 w-4" />
@@ -221,13 +237,13 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button onClick={() => onNavigate('auth')} size="sm">
-                Login
+              <Button asChild size="sm">
+                <Link href="/auth">Login</Link>
               </Button>
             )}
 
             {/* Mobile Menu */}
-            <Sheet>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
@@ -235,32 +251,55 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
               </SheetTrigger>
               <SheetContent side="left" className="w-64">
                 <div className="flex flex-col gap-4 mt-8">
+                  {/* Mobile Search */}
+                  <form onSubmit={(e) => { handleSearch(e); closeMobileMenu(); }} className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="search"
+                        placeholder="Search movies..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </form>
+
                   {navItems.map((item) => (
                     <Button
-                      key={item.section}
-                      variant={currentSection === item.section ? 'default' : 'ghost'}
-                      onClick={() => onNavigate(item.section)}
+                      key={item.path}
+                      variant={isActive(item.path) ? 'default' : 'ghost'}
+                      asChild
                       className="justify-start gap-2"
+                      onClick={closeMobileMenu}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
+                      <Link href={item.path}>
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
                     </Button>
                   ))}
                   <Button
                     variant="ghost"
-                    onClick={() => onNavigate('chatbot')}
+                    asChild
                     className="justify-start gap-2"
+                    onClick={closeMobileMenu}
                   >
-                    <Bot className="h-4 w-4" />
-                    AI Chatbot
+                    <Link href="/chatbot">
+                      <Bot className="h-4 w-4" />
+                      AI Chatbot
+                    </Link>
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={() => onNavigate('social')}
+                    asChild
                     className="justify-start gap-2"
+                    onClick={closeMobileMenu}
                   >
-                    <Users className="h-4 w-4" />
-                    Social Hub
+                    <Link href="/social">
+                      <Users className="h-4 w-4" />
+                      Social Hub
+                    </Link>
                   </Button>
                 </div>
               </SheetContent>
@@ -272,18 +311,18 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
           <div className="grid grid-cols-6 gap-1 p-2">
             {navItems.map((item) => (
-              <button
-                key={item.section}
-                onClick={() => onNavigate(item.section)}
+              <Link
+                key={item.path}
+                href={item.path}
                 className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
-                  currentSection === item.section
+                  isActive(item.path)
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent'
                 }`}
               >
                 <item.icon className="h-5 w-5" />
                 <span className="text-[10px] font-medium">{item.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -300,7 +339,6 @@ export function Navigation({ onNavigate, currentSection }: NavigationProps) {
         }}
       />
       <CollaborativeSearch open={collaborativeSearchOpen} onOpenChange={setCollaborativeSearchOpen} />
-      <AIChatDialog open={aiChatOpen} onOpenChange={setAIChatOpen} />
     </>
   );
 }
