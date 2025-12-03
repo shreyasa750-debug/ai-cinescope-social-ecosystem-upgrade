@@ -30,7 +30,7 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen bg-background">
               <Navigation />
-              <main className="pb-20 md:pb-0">
+              <main className="pb-20 md:pb-0 animate-fade-in">
                 {children}
               </main>
               

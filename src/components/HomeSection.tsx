@@ -327,20 +327,20 @@ export function HomeSection() {
                 <div className="text-8xl">🎬</div>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background/50" />
+            {/* Single unified gradient overlay - no more blinking */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
           </div>
 
           {/* Content */}
           <div className="relative container mx-auto px-4 h-full flex items-center">
-            <div className="max-w-2xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="max-w-2xl space-y-6">
               <Badge className="gap-2 bg-primary/90 backdrop-blur text-lg px-4 py-2">
                 <TrendingUp className="h-4 w-4" />
                 Trending Now
               </Badge>
               
               <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-                {currentHero.title}
+                {currentHero.title || 'Untitled'}
               </h1>
               
               {currentHero.overview && (
