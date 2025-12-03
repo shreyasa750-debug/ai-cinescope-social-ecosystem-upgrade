@@ -1,3 +1,28 @@
+/* Updated: 2025-12-03T16:49:58.065Z */
+/* Updated: 2025-12-03T15:52:19.318Z */
+/* Updated: 2025-12-03T15:47:43.134Z */
+/* Updated: 2025-12-03T09:28:35.565Z */
+/* Updated: 2025-12-02T16:14:23.953Z */
+/* Updated: 2025-12-02T16:12:18.491Z */
+/* Updated: 2025-12-02T16:09:22.814Z */
+/* Updated: 2025-12-02T16:03:30.141Z */
+/* Updated: 2025-12-02T16:02:16.271Z */
+/* Updated: 2025-12-02T16:01:51.869Z */
+/* Updated: 2025-12-02T16:01:31.768Z */
+/* Updated: 2025-12-02T16:01:07.675Z */
+/* Updated: 2025-12-02T15:59:32.275Z */
+/* Updated: 2025-12-02T15:51:40.050Z */
+/* Updated: 2025-12-02T15:48:40.125Z */
+/* Updated: 2025-12-02T15:46:45.097Z */
+/* Updated: 2025-12-02T15:42:02.329Z */
+/* Updated: 2025-12-02T15:41:19.893Z */
+/* Updated: 2025-12-02T15:07:19.349Z */
+/* Updated: 2025-12-02T14:51:56.086Z */
+/* Updated: 2025-12-02T14:50:17.800Z */
+/* Updated: 2025-12-02T14:36:35.306Z */
+/* Updated: 2025-12-02T14:34:53.341Z */
+/* Updated: 2025-12-02T14:27:31.773Z */
+/* Updated: 2025-11-29T04:52:00.519Z */
 /* Updated: 2025-11-28T05:10:29.388Z */
 /* Updated: 2025-11-26T09:55:12.189Z */
 /* Updated: 2025-11-25T16:03:35.971Z */
@@ -18,8 +43,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
