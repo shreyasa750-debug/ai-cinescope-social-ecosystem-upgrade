@@ -29,14 +29,36 @@ import {
 } from 'lucide-react';
 import { MovieCard } from '@/components/MovieCard';
 import { toast } from 'sonner';
-import {
-  loadMovies,
-  preloadDataset,
-  type Movie
-} from '@/lib/movies-loader';
+
+// Movie interface
+interface Movie {
+  id: number;
+  title: string;
+  original_title: string;
+  year: number | null;
+  release_date: string | null;
+  runtime: number | null;
+  genres: string[];
+  overview: string;
+  popularity: number;
+  vote_average: number;
+  vote_count: number;
+  poster: string;
+  backdrop: string;
+  language: string;
+  cast: Array<{
+    name: string;
+    character: string;
+    order: number;
+  }>;
+  director: string;
+  keywords: string[];
+  trailer: string | null;
+}
 
 export function HomeSection() {
   const router = useRouter();
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [heroMovies, setHeroMovies] = useState<Movie[]>([]);
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [trendingMovies, setTrendingMovies] = useState<Movie[]>([]);
@@ -46,6 +68,7 @@ export function HomeSection() {
   const [watchlist, setWatchlist] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [backdropError, setBackdropError] = useState(false);
+  const [displayedMoviesCount, setDisplayedMoviesCount] = useState(30);
 
   const genres = [
     { name: 'Action', icon: '🎬', color: 'from-red-500 to-orange-500' },
@@ -97,7 +120,6 @@ export function HomeSection() {
   ];
 
   useEffect(() => {
-    preloadDataset();
     fetchAllData();
     
     const saved = localStorage.getItem('watchlist');
@@ -126,39 +148,65 @@ export function HomeSection() {
     setError(null);
     
     try {
-      const trendingResult = await loadMovies({
-        page: 1,
-        pageSize: 10,
-        sortBy: 'popularity',
-        sortOrder: 'desc'
-      });
+      console.log('🎬 Fetching movies from /data/movies.json...');
       
-      setTrendingMovies(trendingResult.movies);
-      setHeroMovies(trendingResult.movies.slice(0, 5));
+      // Fetch movies.json with error checking
+      const response = await fetch('/data/movies.json');
       
-      const recommendedResult = await loadMovies({
-        page: 1,
-        pageSize: 10,
-        filters: { ratingMin: 8.0 },
-        sortBy: 'rating',
-        sortOrder: 'desc'
-      });
+      // Check if response is ok
+      if (!response.ok) {
+        throw new Error(`Failed to load movies: ${response.status} ${response.statusText}`);
+      }
       
-      setRecommendedMovies(recommendedResult.movies);
+      // Parse JSON
+      const movies: Movie[] = await response.json();
       
+      // Validate data array
+      if (!Array.isArray(movies) || movies.length === 0) {
+        throw new Error('No movies available - invalid or empty dataset');
+      }
+      
+      console.log(`✅ Successfully loaded ${movies.length} movies`);
+      console.log('📊 First 5 movies:', movies.slice(0, 5));
+      
+      // Store all movies
+      setAllMovies(movies);
+      
+      // Get trending movies (top 30 by popularity, display first 10)
+      const trending = [...movies]
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 30);
+      setTrendingMovies(trending);
+      
+      // Hero carousel (top 5 most popular)
+      setHeroMovies(trending.slice(0, 5));
+      
+      // Recommended movies (high rated - 8.0+, top 30)
+      const recommended = [...movies]
+        .filter(m => m.vote_average >= 8.0)
+        .sort((a, b) => b.vote_average - a.vote_average)
+        .slice(0, 30);
+      setRecommendedMovies(recommended);
+      
+      // New releases (last 2 years, top 30)
       const currentYear = new Date().getFullYear();
-      const newReleasesResult = await loadMovies({
-        page: 1,
-        pageSize: 10,
-        filters: { yearMin: currentYear - 2 },
-        sortBy: 'year',
-        sortOrder: 'desc'
-      });
+      const newReleasesList = [...movies]
+        .filter(m => m.year && m.year >= currentYear - 2)
+        .sort((a, b) => (b.year || 0) - (a.year || 0))
+        .slice(0, 30);
+      setNewReleases(newReleasesList);
       
-      setNewReleases(newReleasesResult.movies);
+      console.log('📦 Movies loaded and categorized:');
+      console.log(`  - Trending: ${trending.length}`);
+      console.log(`  - Recommended: ${recommended.length}`);
+      console.log(`  - New Releases: ${newReleasesList.length}`);
+      
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to load movies. Please try again later.');
+      console.error('❌ Error fetching movies:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to load movies. Please try again later.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -177,16 +225,78 @@ export function HomeSection() {
     localStorage.setItem('watchlist', JSON.stringify(Array.from(newWatchlist)));
   };
 
+  const loadMoreMovies = () => {
+    setDisplayedMoviesCount(prev => Math.min(prev + 30, allMovies.length));
+    toast.success('Loaded more movies');
+  };
+
   const currentHero = heroMovies[currentHeroIndex];
 
+  // Error state UI
   if (error && !loading && trendingMovies.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 p-8">
           <Film className="h-16 w-16 mx-auto text-muted-foreground" />
-          <h2 className="text-2xl font-bold">Unable to Load Movies</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={fetchAllData}>Retry</Button>
+          <h2 className="text-2xl font-bold">Error Loading Movies</h2>
+          <p className="text-muted-foreground max-w-md">{error}</p>
+          <Button onClick={fetchAllData} size="lg" className="gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state UI
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
+        {/* Hero Skeleton */}
+        <div className="relative h-[70vh] bg-muted animate-pulse">
+          <Skeleton className="w-full h-full" />
+        </div>
+
+        <div className="container mx-auto px-4 py-12 space-y-16">
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <Skeleton className="h-8 w-8 mx-auto mb-2" />
+                  <Skeleton className="h-8 w-20 mx-auto mb-1" />
+                  <Skeleton className="h-4 w-16 mx-auto" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Movie Grid Skeleton */}
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-[2/3] rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No movies available
+  if (!loading && trendingMovies.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4 p-8">
+          <Film className="h-16 w-16 mx-auto text-muted-foreground" />
+          <h2 className="text-2xl font-bold">No Movies Available</h2>
+          <p className="text-muted-foreground">The movie dataset is empty or unavailable.</p>
+          <Button onClick={fetchAllData} size="lg">
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -195,11 +305,7 @@ export function HomeSection() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Hero Carousel */}
-      {loading ? (
-        <div className="relative h-[70vh] bg-muted">
-          <Skeleton className="w-full h-full" />
-        </div>
-      ) : currentHero ? (
+      {currentHero && (
         <div className="relative h-[70vh] overflow-hidden group">
           {/* Background Image */}
           <div className="absolute inset-0">
@@ -211,7 +317,10 @@ export function HomeSection() {
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 priority
                 sizes="100vw"
-                onError={() => setBackdropError(true)}
+                onError={() => {
+                  console.warn(`❌ Failed to load backdrop for: ${currentHero.title}`);
+                  setBackdropError(true);
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
@@ -310,7 +419,7 @@ export function HomeSection() {
             ))}
           </div>
         </div>
-      ) : null}
+      )}
 
       <div className="container mx-auto px-4 py-12 space-y-16">
         {/* Quick Access Buttons */}
@@ -343,66 +452,50 @@ export function HomeSection() {
         </div>
 
         {/* Trending Now */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              <h2 className="text-3xl font-bold">Trending Now</h2>
+        {trendingMovies.length > 0 && (
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <h2 className="text-3xl font-bold">Trending Now</h2>
+              </div>
+              <Button variant="ghost" onClick={() => router.push('/explore')}>
+                View All →
+              </Button>
             </div>
-            <Button variant="ghost" onClick={() => router.push('/explore')}>
-              View All →
-            </Button>
-          </div>
-          
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[2/3] rounded-xl" />
-              ))}
-            </div>
-          ) : (
+            
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {trendingMovies.slice(0, 10).map((movie) => (
                 <MovieCard key={movie.id} movie={movie} />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Recommended For You */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-6 w-6 text-purple-500" />
-              <h2 className="text-3xl font-bold">Highest Rated</h2>
-              <Badge variant="secondary" className="gap-1">
-                <Zap className="h-3 w-3" />
-                8.0+ Rating
-              </Badge>
+        {recommendedMovies.length > 0 && (
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-6 w-6 text-purple-500" />
+                <h2 className="text-3xl font-bold">Highest Rated</h2>
+                <Badge variant="secondary" className="gap-1">
+                  <Zap className="h-3 w-3" />
+                  8.0+ Rating
+                </Badge>
+              </div>
+              <Button variant="ghost" onClick={() => router.push('/explore')}>
+                View All →
+              </Button>
             </div>
-            <Button variant="ghost" onClick={() => router.push('/explore')}>
-              View All →
-            </Button>
-          </div>
-          
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[2/3] rounded-xl" />
-              ))}
-            </div>
-          ) : recommendedMovies.length > 0 ? (
+            
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {recommendedMovies.slice(0, 10).map((movie) => (
                 <MovieCard key={movie.id} movie={movie} />
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Loading recommendations...</p>
-            </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Genres / Categories */}
         <section className="space-y-6">
