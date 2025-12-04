@@ -68,7 +68,6 @@ export function HomeSection() {
   const [watchlist, setWatchlist] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [backdropError, setBackdropError] = useState(false);
-  const [displayedMoviesCount, setDisplayedMoviesCount] = useState(30);
 
   const genres = [
     { name: 'Action', icon: '🎬', color: 'from-red-500 to-orange-500' },
@@ -144,62 +143,30 @@ export function HomeSection() {
   }, [heroMovies.length]);
 
   const fetchAllData = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      console.log('🎬 Starting to fetch movies from /data/movies.json...');
-      console.log('📍 Current origin:', window.location.origin);
-      
-      // Fetch movies.json with error checking
       const response = await fetch('/data/movies.json');
       
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      // Check if response is ok
       if (!response.ok) {
-        throw new Error(`Failed to load movies: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to load movies: ${response.status}`);
       }
       
-      // Check content type
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Invalid content type: ${contentType}`);
+      const movies: Movie[] = await response.json();
+      
+      if (!Array.isArray(movies) || movies.length === 0) {
+        throw new Error('No movies found');
       }
-      
-      // Parse JSON
-      const text = await response.text();
-      console.log('📝 Response text length:', text.length);
-      
-      const movies: Movie[] = JSON.parse(text);
-      
-      // Validate data array
-      if (!Array.isArray(movies)) {
-        console.error('❌ Response is not an array:', typeof movies);
-        throw new Error('Invalid data format - expected array');
-      }
-      
-      if (movies.length === 0) {
-        throw new Error('No movies available - dataset is empty');
-      }
-      
-      console.log(`✅ Successfully loaded ${movies.length} movies`);
-      console.log('📊 Sample movies:', movies.slice(0, 3).map(m => ({ id: m.id, title: m.title })));
       
       // Store all movies
       setAllMovies(movies);
       
-      // Get trending movies (top 30 by popularity, display first 10)
+      // Get trending movies (top 30 by popularity)
       const trending = [...movies]
         .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 30);
       setTrendingMovies(trending);
-      console.log('📈 Trending movies set:', trending.length);
       
       // Hero carousel (top 5 most popular)
       setHeroMovies(trending.slice(0, 5));
-      console.log('🎯 Hero movies set:', trending.slice(0, 5).length);
       
       // Recommended movies (high rated - 8.0+, top 30)
       const recommended = [...movies]
@@ -207,7 +174,6 @@ export function HomeSection() {
         .sort((a, b) => b.vote_average - a.vote_average)
         .slice(0, 30);
       setRecommendedMovies(recommended);
-      console.log('⭐ Recommended movies set:', recommended.length);
       
       // New releases (last 2 years, top 30)
       const currentYear = new Date().getFullYear();
@@ -216,21 +182,16 @@ export function HomeSection() {
         .sort((a, b) => (b.year || 0) - (a.year || 0))
         .slice(0, 30);
       setNewReleases(newReleasesList);
-      console.log('📅 New releases set:', newReleasesList.length);
-      
-      console.log('✅ All data loaded successfully!');
       
     } catch (error) {
-      console.error('❌ Error fetching movies:', error);
-      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('Error loading movies:', error);
       const errorMessage = error instanceof Error 
         ? error.message 
-        : 'Failed to load movies. Please try again later.';
+        : 'Failed to load movies';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setLoading(false);
-      console.log('🏁 Fetch completed. Loading state:', false);
     }
   };
 
@@ -247,22 +208,7 @@ export function HomeSection() {
     localStorage.setItem('watchlist', JSON.stringify(Array.from(newWatchlist)));
   };
 
-  const loadMoreMovies = () => {
-    setDisplayedMoviesCount(prev => Math.min(prev + 30, allMovies.length));
-    toast.success('Loaded more movies');
-  };
-
   const currentHero = heroMovies[currentHeroIndex];
-
-  // Debug log current state
-  console.log('🔍 Current state:', {
-    loading,
-    error,
-    trendingCount: trendingMovies.length,
-    heroCount: heroMovies.length,
-    recommendedCount: recommendedMovies.length,
-    newReleasesCount: newReleases.length
-  });
 
   // Error state UI
   if (error && !loading && trendingMovies.length === 0) {
@@ -272,7 +218,11 @@ export function HomeSection() {
           <Film className="h-16 w-16 mx-auto text-muted-foreground" />
           <h2 className="text-2xl font-bold">Error Loading Movies</h2>
           <p className="text-muted-foreground max-w-md">{error}</p>
-          <Button onClick={fetchAllData} size="lg" className="gap-2">
+          <Button onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchAllData();
+          }} size="lg" className="gap-2">
             <TrendingUp className="h-5 w-5" />
             Retry
           </Button>
@@ -286,7 +236,7 @@ export function HomeSection() {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         {/* Hero Skeleton */}
-        <div className="relative h-[70vh] bg-muted animate-pulse">
+        <div className="relative h-[70vh] bg-muted">
           <Skeleton className="w-full h-full" />
         </div>
 
@@ -326,7 +276,10 @@ export function HomeSection() {
           <Film className="h-16 w-16 mx-auto text-muted-foreground" />
           <h2 className="text-2xl font-bold">No Movies Available</h2>
           <p className="text-muted-foreground">The movie dataset is empty or unavailable.</p>
-          <Button onClick={fetchAllData} size="lg">
+          <Button onClick={() => {
+            setLoading(true);
+            fetchAllData();
+          }} size="lg">
             Retry
           </Button>
         </div>
@@ -350,7 +303,6 @@ export function HomeSection() {
                 priority
                 sizes="100vw"
                 onError={() => {
-                  console.warn(`❌ Failed to load backdrop for: ${currentHero.title}`);
                   setBackdropError(true);
                 }}
               />
@@ -371,7 +323,7 @@ export function HomeSection() {
               </Badge>
               
               <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-                {currentHero.title || 'Untitled'}
+                {currentHero.title}
               </h1>
               
               {currentHero.overview && (
@@ -392,7 +344,7 @@ export function HomeSection() {
                     {currentHero.vote_average.toFixed(1)}
                   </Badge>
                 )}
-                {currentHero.genres && currentHero.genres[0] && (
+                {currentHero.genres?.[0] && (
                   <Badge variant="outline" className="text-base px-3 py-1">
                     {currentHero.genres[0]}
                   </Badge>
@@ -422,14 +374,20 @@ export function HomeSection() {
 
           {/* Navigation Arrows */}
           <button
-            onClick={() => setCurrentHeroIndex((prev) => (prev - 1 + heroMovies.length) % heroMovies.length)}
+            onClick={() => {
+              setCurrentHeroIndex((prev) => (prev - 1 + heroMovies.length) % heroMovies.length);
+              setBackdropError(false);
+            }}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur transition-all opacity-0 group-hover:opacity-100"
             aria-label="Previous movie"
           >
             <ChevronLeft className="h-6 w-6 text-white" />
           </button>
           <button
-            onClick={() => setCurrentHeroIndex((prev) => (prev + 1) % heroMovies.length)}
+            onClick={() => {
+              setCurrentHeroIndex((prev) => (prev + 1) % heroMovies.length);
+              setBackdropError(false);
+            }}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur transition-all opacity-0 group-hover:opacity-100"
             aria-label="Next movie"
           >
@@ -441,7 +399,10 @@ export function HomeSection() {
             {heroMovies.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentHeroIndex(index)}
+                onClick={() => {
+                  setCurrentHeroIndex(index);
+                  setBackdropError(false);
+                }}
                 className={`h-2 rounded-full transition-all ${
                   index === currentHeroIndex ? 'w-8 bg-primary' : 'w-2 bg-white/50'
                 }`}
