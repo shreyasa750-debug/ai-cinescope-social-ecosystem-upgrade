@@ -148,26 +148,44 @@ export function HomeSection() {
     setError(null);
     
     try {
-      console.log('🎬 Fetching movies from /data/movies.json...');
+      console.log('🎬 Starting to fetch movies from /data/movies.json...');
+      console.log('📍 Current origin:', window.location.origin);
       
       // Fetch movies.json with error checking
       const response = await fetch('/data/movies.json');
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
       
       // Check if response is ok
       if (!response.ok) {
         throw new Error(`Failed to load movies: ${response.status} ${response.statusText}`);
       }
       
+      // Check content type
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}`);
+      }
+      
       // Parse JSON
-      const movies: Movie[] = await response.json();
+      const text = await response.text();
+      console.log('📝 Response text length:', text.length);
+      
+      const movies: Movie[] = JSON.parse(text);
       
       // Validate data array
-      if (!Array.isArray(movies) || movies.length === 0) {
-        throw new Error('No movies available - invalid or empty dataset');
+      if (!Array.isArray(movies)) {
+        console.error('❌ Response is not an array:', typeof movies);
+        throw new Error('Invalid data format - expected array');
+      }
+      
+      if (movies.length === 0) {
+        throw new Error('No movies available - dataset is empty');
       }
       
       console.log(`✅ Successfully loaded ${movies.length} movies`);
-      console.log('📊 First 5 movies:', movies.slice(0, 5));
+      console.log('📊 Sample movies:', movies.slice(0, 3).map(m => ({ id: m.id, title: m.title })));
       
       // Store all movies
       setAllMovies(movies);
@@ -177,9 +195,11 @@ export function HomeSection() {
         .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 30);
       setTrendingMovies(trending);
+      console.log('📈 Trending movies set:', trending.length);
       
       // Hero carousel (top 5 most popular)
       setHeroMovies(trending.slice(0, 5));
+      console.log('🎯 Hero movies set:', trending.slice(0, 5).length);
       
       // Recommended movies (high rated - 8.0+, top 30)
       const recommended = [...movies]
@@ -187,6 +207,7 @@ export function HomeSection() {
         .sort((a, b) => b.vote_average - a.vote_average)
         .slice(0, 30);
       setRecommendedMovies(recommended);
+      console.log('⭐ Recommended movies set:', recommended.length);
       
       // New releases (last 2 years, top 30)
       const currentYear = new Date().getFullYear();
@@ -195,20 +216,21 @@ export function HomeSection() {
         .sort((a, b) => (b.year || 0) - (a.year || 0))
         .slice(0, 30);
       setNewReleases(newReleasesList);
+      console.log('📅 New releases set:', newReleasesList.length);
       
-      console.log('📦 Movies loaded and categorized:');
-      console.log(`  - Trending: ${trending.length}`);
-      console.log(`  - Recommended: ${recommended.length}`);
-      console.log(`  - New Releases: ${newReleasesList.length}`);
+      console.log('✅ All data loaded successfully!');
       
     } catch (error) {
       console.error('❌ Error fetching movies:', error);
+      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to load movies. Please try again later.';
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
+      console.log('🏁 Fetch completed. Loading state:', false);
     }
   };
 
@@ -231,6 +253,16 @@ export function HomeSection() {
   };
 
   const currentHero = heroMovies[currentHeroIndex];
+
+  // Debug log current state
+  console.log('🔍 Current state:', {
+    loading,
+    error,
+    trendingCount: trendingMovies.length,
+    heroCount: heroMovies.length,
+    recommendedCount: recommendedMovies.length,
+    newReleasesCount: newReleases.length
+  });
 
   // Error state UI
   if (error && !loading && trendingMovies.length === 0) {
@@ -327,7 +359,6 @@ export function HomeSection() {
                 <div className="text-8xl">🎬</div>
               </div>
             )}
-            {/* Single unified gradient overlay - no more blinking */}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
           </div>
 
